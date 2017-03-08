@@ -26,6 +26,7 @@ public class BsvTest {
             .yamlSchema("classpath:com/github/bsv/schema03.0.0.yaml")
             .yamlSchema("classpath:com/github/bsv/schema03.0.1.yaml")
             .yamlSchema("classpath:com/github/bsv/schema03.1.0.yaml")
+            .transcoding((char) 0x00, '\n')
             .build();
     }
     
@@ -142,6 +143,17 @@ public class BsvTest {
         BsvDeserializer deserializer = context.createDeserializer(inputStream);
         Schema030x data = (Schema030x) deserializer.next(); //first line
         assertEquals("ABC", data.getS());
+        assertTrue(data.getMap().isEmpty());
+    }
+    
+    @Test
+    public void testTranscoding() throws IOException, BsvException {
+    	InputStream inputStream = this.getClass().getResourceAsStream(
+                "/com/github/bsv/sample_transcode.txt");
+
+        BsvDeserializer deserializer = context.createDeserializer(inputStream);
+        Schema030x data = (Schema030x) deserializer.next(); //first line
+        assertEquals("AB\nCD", data.getS());
         assertTrue(data.getMap().isEmpty());
     }
 }

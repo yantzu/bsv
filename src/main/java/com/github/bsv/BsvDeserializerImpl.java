@@ -245,9 +245,14 @@ public class BsvDeserializerImpl implements BsvDeserializer {
                     || c == context.getKeyValueDelimiter() || c == context.getLineDelimiter()) {
                 tokenEnding = i;
                 break;
-            } else {
-                valueCache.append(c);
-            }
+			} else {
+				Character transcode = context.transcoding(c);
+				if (transcode == null) {
+					valueCache.append(c);
+				} else {
+					valueCache.append(transcode.charValue());
+				}
+			}
         }
         return tokenEnding;
     }

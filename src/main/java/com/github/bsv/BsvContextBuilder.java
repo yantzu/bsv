@@ -1,8 +1,10 @@
 package com.github.bsv;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * BSV stands for Binary-Separated Values
@@ -16,6 +18,8 @@ public class BsvContextBuilder {
     private char         itemsSeperator    = 0x02;
     private char         keyValueSeperator = 0x03;
     private char         lineSeperator     = '\n';
+    
+    private Map<Character, Character> transcodes = new HashMap<Character, Character>();
     
     public BsvContextBuilder() {
     }
@@ -57,8 +61,15 @@ public class BsvContextBuilder {
         return this;
     }
     
+    
+	public BsvContextBuilder transcoding(char from, char to) {
+		this.transcodes.put(from, to);
+		return this;
+	}
+	
+    
     public BsvContext build() {
         return new BsvContext(schemas, fieldsSeperator, itemsSeperator, keyValueSeperator,
-                lineSeperator);
+                lineSeperator, transcodes);
     }
 }
