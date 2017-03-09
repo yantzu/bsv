@@ -246,7 +246,7 @@ public class BsvDeserializerImpl implements BsvDeserializer {
                 tokenEnding = i;
                 break;
 			} else {
-				Character transcode = context.transcoding(c);
+				Character transcode = context.transcodingDeser(c);
 				if (transcode == null) {
 					valueCache.append(c);
 				} else {

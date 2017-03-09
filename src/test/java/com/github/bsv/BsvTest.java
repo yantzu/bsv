@@ -26,7 +26,7 @@ public class BsvTest {
             .yamlSchema("classpath:com/github/bsv/schema03.0.0.yaml")
             .yamlSchema("classpath:com/github/bsv/schema03.0.1.yaml")
             .yamlSchema("classpath:com/github/bsv/schema03.1.0.yaml")
-            .transcoding((char) 0x00, '\n')
+            .transcoding('\n', (char) 0x00)
             .build();
     }
     

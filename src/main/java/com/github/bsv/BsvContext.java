@@ -6,6 +6,7 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * BSV stands for Binary-Separated Values
@@ -20,7 +21,9 @@ public class BsvContext {
     private char                                   keyValueDelimiter;
     private char                                   lineDelimiter;
 
-	private Map<Character, Character> transcodes = new HashMap<Character, Character>();
+    
+    private Map<Character, Character> transcodesSer = new HashMap<Character, Character>();
+	private Map<Character, Character> transcodesDeser = new HashMap<Character, Character>();
 	
     
 	protected BsvContext(List<BsvSchema> schemas, char fieldsDelimiter, char itemsDelimiter, char keyValueDelimiter,
@@ -42,7 +45,10 @@ public class BsvContext {
         this.itemsDelimiter = itemsDelimiter;
         this.keyValueDelimiter = keyValueDelimiter;
         this.lineDelimiter = lineDelimiter;
-		this.transcodes = transcodes;
+		this.transcodesSer = transcodes;
+		for (Entry<Character, Character> transcode : transcodes.entrySet()) {
+			this.transcodesDeser.put(transcode.getValue(), transcode.getKey());
+		}
     }
 
     protected char getFieldsDelimiter() {
@@ -61,8 +67,12 @@ public class BsvContext {
         return lineDelimiter;
     }
 
-	protected Character transcoding(Character from) {
-		return transcodes.get(from);
+	protected Character transcodingSer(Character from) {
+		return transcodesSer.get(from);
+	}
+	
+	protected Character transcodingDeser(Character from) {
+		return transcodesDeser.get(from);
 	}
 	
     protected Map<Character, BsvSchema> getSchemas(String majorVersion, char minorVersion) {
