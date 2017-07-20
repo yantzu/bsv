@@ -11,10 +11,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.bsv.BsvSchema.Field;
 
 public class BsvDeserializerImpl implements BsvDeserializer {
 
+    private final static Logger       LOG        = LoggerFactory.getLogger(BsvDeserializerImpl.class);
     private static final Charset      UTF_8        = Charset.forName("UTF-8");
 
     private BsvContext                context;
@@ -55,27 +59,28 @@ public class BsvDeserializerImpl implements BsvDeserializer {
             return doNext();
         } catch (IOException ioException) {
             throw ioException;
-        } catch (Exception exception) {
+        } catch (BsvException bsvException) {
             doSkip();
-            if (exception instanceof BsvException) {
-                throw (BsvException) exception;
-            } else {
-                throw new BsvException(exception);
-            }
+            throw bsvException;
         }
     }
 
 
     protected void doSkip() throws IOException {
+        StringBuilder discardCache = new StringBuilder();
         while (true) {
             int i = reader.read();
             if (i == -1) {
+                LOG.error("Discard raw data:" + discardCache.toString());
                 break;
             }
 
             char c = (char) i;
             if (c == context.getLineDelimiter()) {
+                LOG.error("Discard raw data:" + discardCache.toString());
                 break;
+            } else {
+                discardCache.append(c);
             }
         }
     }
@@ -102,16 +107,19 @@ public class BsvDeserializerImpl implements BsvDeserializer {
         }
 
         
-        
-        Iterator<Field> fieldsIterator = schema.getFields().iterator();
-        while(fieldsIterator.hasNext()) {
-            Field field = fieldsIterator.next();
-            Object fieldValue = nextField(field, fieldsIterator.hasNext());
-            try {
+        try {
+            Iterator<Field> fieldsIterator = schema.getFields().iterator();
+            while (fieldsIterator.hasNext()) {
+                Field field = fieldsIterator.next();
+                Object fieldValue = nextField(field, fieldsIterator.hasNext());
                 field.getBeanWriteMethod().invoke(bean, fieldValue);
-            } catch (Exception exception) {
-                throw new BsvException("Not able to set bean property " + field.getName()
-                        + ", due to " + exception.getMessage(), exception);
+            }
+        } catch (Exception exception) {
+            LOG.error("Discard object:" + bean.toString());
+            if (exception instanceof BsvException) {
+                throw (BsvException) exception;
+            } else {
+                throw new BsvException(exception);
             }
         }
 
@@ -245,14 +253,14 @@ public class BsvDeserializerImpl implements BsvDeserializer {
                     || c == context.getKeyValueDelimiter() || c == context.getLineDelimiter()) {
                 tokenEnding = i;
                 break;
-			} else {
-				Character transcode = context.transcodingDeser(c);
-				if (transcode == null) {
-					valueCache.append(c);
-				} else {
-					valueCache.append(transcode.charValue());
-				}
-			}
+            } else {
+                Character transcode = context.transcodingDeser(c);
+                if (transcode == null) {
+                    valueCache.append(c);
+                } else {
+                    valueCache.append(transcode.charValue());
+                }
+            }
         }
         return tokenEnding;
     }
@@ -261,12 +269,17 @@ public class BsvDeserializerImpl implements BsvDeserializer {
                          int falseExpected2) throws BsvException {
         if (bool) {
             if (actual != trueExpected) {
-                throw new BsvException("Invalid delimiter, expected " + trueExpected + ", but was " + actual);
+                String errorMessage = "Invalid delimiter, expected " + trueExpected + ", but was "
+                        + actual + ", cache is " + valueCache.toString();
+                LOG.error(errorMessage);
+                throw new BsvException(errorMessage);
             }
         } else {
             if (actual != falseExpected1 && actual != falseExpected2) {
-                throw new BsvException("Invalid delimiter, expected " + falseExpected1 + " or "
-                        + falseExpected2 + ", but was " + actual);
+                String errorMessage = "Invalid delimiter, expected " + falseExpected1 + " or "
+                        + falseExpected2 + ", but was " + actual + ", cache is " + valueCache.toString();
+                LOG.error(errorMessage);
+                throw new BsvException(errorMessage);
             }
         }
     }
