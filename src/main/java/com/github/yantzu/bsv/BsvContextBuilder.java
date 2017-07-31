@@ -1,4 +1,4 @@
-package com.github.bsv;
+package com.github.yantzu.bsv;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
