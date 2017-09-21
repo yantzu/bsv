@@ -3,5 +3,8 @@ package com.github.yantzu.bsv;
 import java.io.IOException;
 
 public interface BsvDeserializer {
-    Object next() throws IOException, BsvException;
+
+	BsvObject next() throws IOException, BsvException;
+
+	void close() throws IOException, BsvException;
 }

@@ -46,5 +46,7 @@ public interface BsvSchema {
         String getName();
         
         Method getBeanWriteMethod();
+
+		Method getBeanReadMethod();
     }
 }

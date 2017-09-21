@@ -3,15 +3,19 @@ package com.github.yantzu.bsv;
 import java.util.List;
 import java.util.Map;
 
-public class Schema030x {
+public class Schema030x implements BsvObject {
     private String              version;
     private String              s;
     private int                 i;
     private boolean             b;
     private String              n;
     private List<String>        array;
-    private Map<String, Object> map;
+    private Map<String, String> map;
 
+    public Schema030x() {
+    	
+    }
+    
     public Schema030x(String version) {
         super();
         this.version = version;
@@ -75,12 +79,12 @@ public class Schema030x {
     }
 
 
-    public Map<String, Object> getMap() {
+    public Map<String, String> getMap() {
         return map;
     }
 
 
-    public void setMap(Map<String, Object> map) {
+    public void setMap(Map<String, String> map) {
         this.map = map;
     }
 

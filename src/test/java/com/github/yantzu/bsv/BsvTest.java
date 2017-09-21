@@ -5,10 +5,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -36,7 +40,7 @@ public class BsvTest {
     }
     
     @Test
-    public void testSingleLine() throws IOException, BsvException {
+    public void testDeserializeSingleLine() throws IOException, BsvException {
         InputStream inputStream = this.getClass().getResourceAsStream(
                 "/com/github/yantzu/bsv/sample_single.txt");
 
@@ -55,7 +59,7 @@ public class BsvTest {
     }
     
     @Test
-    public void testBatchLine() throws IOException, BsvException {
+    public void testDeserializeBatchLine() throws IOException, BsvException {
         InputStream inputStream = this.getClass().getResourceAsStream(
                 "/com/github/yantzu/bsv/sample_batch.txt");
 
@@ -76,7 +80,7 @@ public class BsvTest {
     }
     
     @Test
-    public void testChinese() throws IOException, BsvException {
+    public void testDeserializeChinese() throws IOException, BsvException {
         InputStream inputStream = this.getClass().getResourceAsStream(
                 "/com/github/yantzu/bsv/sample_chinese.txt");
 
@@ -93,7 +97,7 @@ public class BsvTest {
     }
     
     @Test
-    public void testEmoji() throws IOException, BsvException {
+    public void testDeserializeEmoji() throws IOException, BsvException {
         Scanner emojiData = new Scanner(this.getClass().getResourceAsStream(
                 "/com/github/yantzu/bsv/testEmoji.data"), "UTF-8");
         String s = emojiData.nextLine();
@@ -118,7 +122,7 @@ public class BsvTest {
     }
     
     @Test
-    public void testVariants() throws IOException, BsvException {
+    public void testDeserializeVariants() throws IOException, BsvException {
         InputStream inputStream = this.getClass().getResourceAsStream(
                 "/com/github/yantzu/bsv/sample_variants.txt");
 
@@ -131,7 +135,7 @@ public class BsvTest {
     }
     
     @Test(expected = BsvException.class)
-    public void testInvalid() throws IOException, BsvException {
+    public void testDeserializeInvalid() throws IOException, BsvException {
         InputStream inputStream = this.getClass().getResourceAsStream(
                 "/com/github/yantzu/bsv/sample_invalid.txt");
 
@@ -141,7 +145,7 @@ public class BsvTest {
     }
     
     @Test
-    public void testEmptymap() throws IOException, BsvException {
+    public void testDeserializeEmptymap() throws IOException, BsvException {
         InputStream inputStream = this.getClass().getResourceAsStream(
                 "/com/github/yantzu/bsv/sample_emptymap.txt");
 
@@ -152,7 +156,7 @@ public class BsvTest {
     }
     
     @Test
-    public void testTranscoding() throws IOException, BsvException {
+    public void testDeserializeTranscoding() throws IOException, BsvException {
     	InputStream inputStream = this.getClass().getResourceAsStream(
                 "/com/github/yantzu/bsv/sample_transcode.txt");
 
@@ -161,4 +165,105 @@ public class BsvTest {
         assertEquals("AB\nCD", data.getS());
         assertTrue(data.getMap().isEmpty());
     }
+    
+	@Test
+	public void testSerdeString() throws IOException, BsvException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		BsvSerializer serializer = context.createSerializer(baos, "03", '0');
+		Schema030x data = new Schema030x();
+		data.setVersion("03.0.0");
+		data.setS("test_string");
+		
+		serializer.next(data);
+		serializer.close();
+		
+		BsvDeserializer deserializer = context.createDeserializer(new ByteArrayInputStream(baos.toByteArray()));
+		assertEquals( ((Schema030x) deserializer.next()).getS(), data.getS());
+		
+		assertNull(deserializer.next());
+	}
+	
+	@Test
+	public void testSerdeTranscoding() throws IOException, BsvException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		BsvSerializer serializer = context.createSerializer(baos, "03", '0');
+		Schema030x data = new Schema030x();
+		data.setVersion("03.0.0");
+		data.setS("AB\nCD");
+		
+		serializer.next(data);
+		serializer.close();
+		
+		BsvDeserializer deserializer = context.createDeserializer(new ByteArrayInputStream(baos.toByteArray()));
+		assertEquals( ((Schema030x) deserializer.next()).getS(), data.getS());
+		
+		assertNull(deserializer.next());
+	}
+	
+	
+	@Test
+	public void testSerdeMap() throws IOException, BsvException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		BsvSerializer serializer = context.createSerializer(baos, "03", '0');
+		Schema030x data = new Schema030x();
+		data.setVersion("03.0.0");
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("a", "四");
+		map.put("b", "地");
+		data.setMap(map);
+		serializer.next(data);
+		serializer.close();
+
+
+
+		BsvDeserializer deserializer = context.createDeserializer(new ByteArrayInputStream(baos.toByteArray()));
+		Schema030x dataR = (Schema030x) deserializer.next();
+		
+		assertEquals(2, dataR.getMap().size());
+		assertEquals("四", dataR.getMap().get("a"));
+		assertEquals("地", dataR.getMap().get("b"));
+		
+		assertNull(deserializer.next());
+	}
+	
+	@Test
+	public void testSerdeList() throws IOException, BsvException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		BsvSerializer serializer = context.createSerializer(baos, "03", '0');
+		Schema030x data = new Schema030x();
+		data.setVersion("03.0.0");
+		List<String> list = new ArrayList<String>();
+		list.add("😀");
+		list.add("😄");
+		data.setArray(list);
+		serializer.next(data);
+		serializer.close();
+
+
+		BsvDeserializer deserializer = context.createDeserializer(new ByteArrayInputStream(baos.toByteArray()));
+		Schema030x dataR = (Schema030x) deserializer.next();
+		
+		assertEquals(2, dataR.getArray().size());
+		assertEquals("😀", dataR.getArray().get(0));
+		assertEquals("😄", dataR.getArray().get(1));
+		
+		assertNull(deserializer.next());
+	}
+	
+	@Test
+	public void testSerdeMultiline() throws IOException, BsvException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		BsvSerializer serializer = context.createSerializer(baos, "03", '0');
+		Schema030x data = new Schema030x();
+		data.setVersion("03.0.0");
+		data.setS("test_string");
+		
+		serializer.next(data);
+		serializer.next(data);
+		serializer.close();
+		
+		BsvDeserializer deserializer = context.createDeserializer(new ByteArrayInputStream(baos.toByteArray()));
+		assertEquals( ((Schema030x) deserializer.next()).getS(), data.getS());
+		assertEquals( ((Schema030x) deserializer.next()).getS(), data.getS());
+	}
 }

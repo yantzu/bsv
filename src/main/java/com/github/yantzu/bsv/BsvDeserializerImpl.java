@@ -19,10 +19,14 @@ import com.github.yantzu.bsv.BsvSchema.Field;
 public class BsvDeserializerImpl implements BsvDeserializer {
 
     private final static Logger       LOG        = LoggerFactory.getLogger(BsvDeserializerImpl.class);
-    private static final Charset      UTF_8        = Charset.forName("UTF-8");
+    
 
     private BsvContext                context;
     private BufferedReader            reader;
+    
+	private String majorVersion;
+	private char minorVersion;
+    
     //<variant, Schema>
     private Map<Character, BsvSchema> schemas;
 
@@ -30,7 +34,7 @@ public class BsvDeserializerImpl implements BsvDeserializer {
 
 
     protected BsvDeserializerImpl(BsvContext context, InputStream inputStream) throws IOException, BsvException {
-        this(context, inputStream, UTF_8);
+        this(context, inputStream, BsvContext.DEFAULT_CHARSET);
     }
 
 
@@ -39,8 +43,8 @@ public class BsvDeserializerImpl implements BsvDeserializer {
         byte[] majorVersionByte = new byte[2];
         inputStream.read(majorVersionByte);
 
-        String majorVersion = new String(majorVersionByte, UTF_8);
-        char minorVersion = (char) inputStream.read();
+        majorVersion = new String(majorVersionByte, BsvContext.DEFAULT_CHARSET);
+        minorVersion = (char) inputStream.read();
         
         int delimiter = inputStream.read();
 //        inputStream.read();
@@ -50,11 +54,11 @@ public class BsvDeserializerImpl implements BsvDeserializer {
 
         this.context = context;
         this.reader = new BufferedReader(new InputStreamReader(inputStream, charset));
-    }
+	}
 
 
     @Override
-    public Object next() throws IOException, BsvException {
+    public BsvObject next() throws IOException, BsvException {
         try {
             return doNext();
         } catch (IOException ioException) {
@@ -86,7 +90,7 @@ public class BsvDeserializerImpl implements BsvDeserializer {
     }
     
 
-    protected Object doNext() throws IOException, BsvException {
+    protected BsvObject doNext() throws IOException, BsvException {
         int i = reader.read();
         if (i == -1) {
             return null;
@@ -98,9 +102,10 @@ public class BsvDeserializerImpl implements BsvDeserializer {
             throw new BsvException("No schema defined for variant " + variantNumber);
         }
         
-        Object bean;
+        BsvObject bean;
         try {
-            bean = schema.getBeanConstructor().newInstance(schema.getFullVersion());
+            bean = (BsvObject)schema.getBeanConstructor().newInstance();
+            bean.setVersion(schema.getFullVersion());
         } catch (Exception exception) {
             throw new BsvException("Not able to initial bean instance due to "
                     + exception.getMessage(), exception);
@@ -303,4 +308,10 @@ public class BsvDeserializerImpl implements BsvDeserializer {
             throw new BsvException("Invalid delimiter, expected " + expected + ", but was " + actual);
         }
     }
+
+
+	@Override
+	public void close() throws IOException, BsvException {
+		reader.close();
+	}
 }

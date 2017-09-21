@@ -2,6 +2,7 @@ package com.github.yantzu.bsv;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,9 @@ import java.util.Map.Entry;
  * @author yanxilang
  */
 public class BsvContext {
+	
+	protected static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+	
     //<major.minor, <variant, Schema>>
     private Map<String, Map<Character, BsvSchema>> schemas;
     private char                                   fieldsDelimiter;
@@ -83,7 +87,18 @@ public class BsvContext {
         }
         return result;
     }
+
+	public BsvSerializer createSerializer(OutputStream outputStream, String majorVersion, char minorVersion)
+			throws IOException, BsvException {
+		return new BsvSerializerImpl(this, outputStream, majorVersion, minorVersion);
+	}
+
+	public BsvSerializer createSerializer(OutputStream outputStream, String majorVersion, char minorVersion,
+			Charset charset) throws IOException, BsvException {
+		return new BsvSerializerImpl(this, outputStream, majorVersion, minorVersion, charset);
+	}
     
+	
     public BsvDeserializer createDeserializer(InputStream inputStream) throws IOException, BsvException {
         return new BsvDeserializerImpl(this, inputStream);
     }

@@ -64,54 +64,60 @@ public class BsvSchemaImpl implements BsvSchema {
                     + majorVersion);
         }
         this.majorVersion = majorVersion;
-        
-        if(this.minorVersion != '\0') {
-            fullVersion = this.majorVersion + "." + this.minorVersion;
-        }
-        
+        fullVersion = buildFullVersion();
         return this;
     }
 
 
     public BsvSchemaImpl withMinorVersion(char minorVersion) {
         this.minorVersion = minorVersion;
-        if (this.majorVersion != null && !this.majorVersion.equals("")) {
-            fullVersion = this.majorVersion + "." + this.minorVersion;
-        }
+        fullVersion = buildFullVersion();
         return this;
     }
 
 
     public BsvSchemaImpl withVariantNumber(char variantNumber) {
         this.variantNumber = variantNumber;
+        fullVersion = buildFullVersion();
         return this;
     }
+    
+    
+	private String buildFullVersion() {
+		if (this.majorVersion != null && !this.majorVersion.equals("") && this.minorVersion != '\0'
+				&& this.variantNumber != '\0') {
+			return this.majorVersion + "." + this.minorVersion + "." + this.variantNumber;
+		} else {
+			return "";
+		}
+	}
     
     public BsvSchemaImpl withField(int index, String name, FieldType type) {
         if(this.beanClass == null || this.beanInfo == null) {
             throw new IllegalStateException("Please set beanClass before add field"); 
-        }
-        Method beanWriteMethod = null;
+		}
+		Method beanWriteMethod = null;
+		Method beanReadMethod = null;
         for (PropertyDescriptor propertyDescriptor : this.beanInfo.getPropertyDescriptors()) {
             if(propertyDescriptor.getName().equals(name)) {
                 beanWriteMethod = propertyDescriptor.getWriteMethod();
+                beanReadMethod = propertyDescriptor.getReadMethod();
                 break;
             }
         }
-        if (beanWriteMethod == null) {
-            throw new IllegalArgumentException("No property " + name + " exist in class "
-                    + this.beanClass);
-        }
-        this.fields.add(new FieldImpl(index, name, type, beanWriteMethod));
+		if (beanWriteMethod == null || beanReadMethod == null) {
+			throw new IllegalArgumentException("No property " + name + " exist in class " + this.beanClass);
+		}
+        this.fields.add(new FieldImpl(index, name, type, beanWriteMethod, beanReadMethod));
         return this;
     }
     
     public BsvSchemaImpl withBeanClass(Class<?> beanClass) {
         this.beanClass = beanClass;
         try {
-            this.beanConstructor = beanClass.getConstructor(String.class);
+            this.beanConstructor = beanClass.getConstructor();
         } catch (NoSuchMethodException noSuchMethodException) {
-            throw new IllegalStateException("Class " + beanClass + " has no constructor with 1 String argument");
+            throw new IllegalStateException("Class " + beanClass + " has no constructor with 0 argument");
         } catch (SecurityException securityException) {
             throw new IllegalStateException("Has no athority to access Class " + beanClass);
         }
@@ -128,13 +134,15 @@ public class BsvSchemaImpl implements BsvSchema {
         private FieldType type;
         private String    name;
         private Method    beanWriteMethod;
+		private Method    beanReadMethod;
 
-        public FieldImpl(int index, String name, FieldType type, Method beanWriteMethod) {
+        public FieldImpl(int index, String name, FieldType type, Method beanWriteMethod, Method beanReadMethod) {
             super();
             this.index = index;
             this.type = type;
             this.name = name;
-            this.beanWriteMethod = beanWriteMethod;
+			this.beanWriteMethod = beanWriteMethod;
+			this.beanReadMethod = beanReadMethod;
         }
 
         public int getIndex() {
@@ -152,6 +160,10 @@ public class BsvSchemaImpl implements BsvSchema {
         public Method getBeanWriteMethod() {
             return beanWriteMethod;
         }
+        
+		public Method getBeanReadMethod() {
+			return beanReadMethod;
+		}
     }
 
 }
