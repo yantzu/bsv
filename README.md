@@ -9,7 +9,7 @@ BSV is used in our production environment which collect 30 billion record each d
   majorVersion: "03"
   minorVersion: "1"
   variantNumber: "0"
-  beanClass: "com.meizu.bigdata.uxip.bsv.Schema030x"
+  beanClass: "com.github.bsv.Schema030x"
   fields:
   - name: "s"
     type: "string"
